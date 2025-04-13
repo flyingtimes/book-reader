@@ -1,0 +1,4 @@
+gradio
+openai
+markitdown
+python-dotenv
