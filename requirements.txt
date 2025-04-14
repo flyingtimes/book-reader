@@ -1,4 +1,4 @@
 gradio
 openai
-markitdown
+markitdown[pdf]
 python-dotenv

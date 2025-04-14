@@ -7,11 +7,11 @@ import tempfile
 
 # 加载环境变量
 load_dotenv()
-
+api_key=os.getenv("OPENROUTER_API_KEY")
 # 创建OpenAI客户端
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY")
+    api_key=api_key
 )
 
 # 创建输出目录
@@ -22,48 +22,80 @@ def process_pdf(pdf_file, api_key=None):
     """处理PDF文件，转换为Markdown并生成摘要"""
     import json
     global client
-    if api_key and api_key.strip():
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key.strip()
-        )
-    if not client.api_key:
-        return None, "请提供OpenRouter API密钥"
+    print(client.api_key)
+    # 验证PDF文件输入
+    if pdf_file is None:
+        print("Error: PDF file is None")
+        return [["错误", "请上传PDF文件"]]
     try:
         md_content = MarkItDown().convert(pdf_file)
+        if md_content is None:
+            print("Error: Failed to convert PDF to Markdown")
+            return [["错误", "PDF转换失败，请检查文件格式"]]
+        print(md_content)
         md_file_path = os.path.join(output_dir, "output.md")
-        max_retry = 3
+        max_retry = 4
         attempt = 0
+        modelnames = ["meta-llama/llama-4-scout:free","meta-llama/llama-4-scout:free","openrouter/optimus-alpha", "moonshotai/kimi-vl-a3b-thinking:free"]
         while attempt < max_retry:
             attempt += 1
-            response = client.chat.completions.create(
-                model="openrouter/optimus-alpha", 
-                messages=[
-                    {"role": "system", "content": '''
-                    你是一个专业的图书摘要生成助手，请对提供的内容,给每个章节生成摘要，以及生成全文总结。以json格式输出，格式如下：
-                    {
-                        "第1章": "第1章的摘要",
-                        "第2章": "第2章的摘要",
-                        ...
-                        "总结": "本书的全文摘要总结"
-                    }
-                    '''},
-                    {"role": "user", "content": f"请按格式处理以下内容：\n\n{md_content}..."}
-                ],
-                max_tokens=10000
-            )
-            summary = response.choices[0].message.content
             try:
-                summary_obj = json.loads(summary)
+                response = client.chat.completions.create(
+                    model=modelnames[attempt-1],
+                    extra_body={},
+                    messages=[
+                        {"role": "system", "content": '''
+                        你是一个专业的图书摘要生成助手，请对提供的内容,给每个章节生成中文摘要，以及生成全文中文总结。以json格式输出，格式如下：
+                        {
+                            "第1章": "第1章的摘要",
+                            "第2章": "第2章的摘要",
+                            ...,
+                            "总结": "本书的全文摘要总结"
+                        }
+                        注意：摘要的内容是中文，每个摘要的长度约为200字，返回信息必须是json格式。
+                        '''},
+                        {"role": "user", "content": f"请按格式处理以下内容：\n\n{md_content}"}
+                    ],
+                    max_tokens=10000
+                )
+                print("API Response:", response)
+                if not response or not response.choices:
+                    print("Error: Invalid API response - No choices available")
+                    continue
+                    
+                summary = response.choices[0].message.content
+                print("Raw summary content:", summary)
+                if not summary:
+                    print("Error: Empty summary content from API")
+                    continue
+                
+                try:
+                    summary_obj = json.loads(summary)
+                    if not isinstance(summary_obj, dict):
+                        print("Error: Summary is not a valid JSON object")
+                        continue
+                except json.JSONDecodeError as je:
+                    print(f"JSON parsing error: {je}")
+                    continue
+                except Exception as e:
+                    print(f"Unexpected error parsing summary: {e}")
+                    continue
+                
+                if not summary_obj:
+                    print("Error: Empty summary object after parsing")
+                    continue
+                    
                 table_data = [[chapter, content] for chapter, content in summary_obj.items()]
                 return table_data
-            except Exception:
+            except Exception as m:
+                print(f"Error processing PDF: {m}")
                 if attempt >= max_retry:
-                    return None
+                    return [["错误", "摘要生成失败，请重试"]]
                 continue
-        return None
+        return [["错误", "处理超过最大重试次数"]]
     except Exception as e:
-        return None
+        print(f"Error processing PDF2: {e}")
+        return [["错误", "PDF处理过程出错"]]
 
 # 创建Gradio界面
 with gr.Blocks(title="图书AI拆解工具", theme="soft", css="""
@@ -89,7 +121,14 @@ body { background: #f6f8fa; font-family: 'Inter', 'PingFang SC', Arial, sans-ser
         submit_btn = gr.Button("开始处理")
         
     with gr.Row():
-        summary_output = gr.Dataframe(headers=["章节", "摘要"], label="内容摘要", col_count=(2, "fixed"))
+        summary_output = gr.Dataframe(
+            headers=["章节", "摘要"],
+            label="内容摘要",
+            col_count=(2, "fixed"),
+            wrap=True,
+            column_widths=["25%", "75%"],
+            height=600
+        )
     
     submit_btn.click(
         fn=process_pdf,
