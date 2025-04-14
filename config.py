@@ -10,16 +10,19 @@ API_BASE_URL = "https://openrouter.ai/api/v1"
 
 # 模型配置
 MODEL_NAMES = [
-    "mistralai/mistral-nemo",
-    "moonshotai/kimi-vl-a3b-thinking:free",
-    "moonshotai/kimi-vl-a3b-thinking:free", 
-    "moonshotai/kimi-vl-a3b-thinking:free"
+    "openrouter/optimus-alpha",
+    "openrouter/optimus-alpha",
+    "openrouter/optimus-alpha", 
+    "meta-llama/llama-4-scout:free"
 ]
 
 # 摘要生成配置
-MAX_LENGTH = 100000
-MAX_TOKENS = 10000
+MAX_LENGTH = 500000
+MAX_TOKENS = 50000
 MAX_RETRY = 4
+
+# 缓存配置
+ENABLE_CACHE = True
 
 # 系统提示词
 SYSTEM_PROMPTS = {

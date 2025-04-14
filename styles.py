@@ -25,15 +25,13 @@ TABLE_CONFIG = {
         "label": "内容摘要",
         "col_count": (2, "fixed"),
         "wrap": True,
-        "column_widths": ["25%", "75%"],
-        "height": 600
+        "column_widths": ["25%", "75%"]
     },
     "character_table": {
         "headers": ["人物姓名", "人物特点"],
         "label": "人物志",
         "col_count": (2, "fixed"),
         "wrap": True,
-        "column_widths": ["25%", "75%"],
-        "height": 600
+        "column_widths": ["25%", "75%"]
     }
 }

@@ -29,7 +29,7 @@ def generate_summary(client, content, prompt_type):
     """生成内容摘要"""
     attempt = 0
     if len(content) > MAX_LENGTH:
-        content = content[:MAX_TOKENS]
+        content = content[:MAX_LENGTH]
     while attempt < MAX_RETRY:
         try:
             response = client.chat.completions.create(
@@ -69,39 +69,35 @@ def generate_summary(client, content, prompt_type):
     
     raise Exception("处理超过最大重试次数")
 
-def process_pdf_file(pdf_file, output_dir, api_key=None):
+def process_pdf_file(pdf_file, output_dir, api_key=None, enable_cache=True):
     """处理PDF文件并生成摘要"""
     try:
         # 初始化缓存
-        cache = PDFCache()
+        cache = PDFCache() 
         
         # 检查缓存
         cache_result = cache.get_cache(pdf_file)
         if not cache_result:
             # 转换PDF到Markdown
             md_content = convert_pdf_to_markdown(pdf_file, output_dir)
-            cache.save_cache(pdf_file, md_content, ["错误", str(e)], ["错误", str(e)])
+        else:
+            md_content = cache_result[0]
 
+        if not enable_cache:
+
+            # 创建客户端
+            client = create_client(api_key)
+            # 生成章节摘要
+            chapter_summary = generate_summary(client, md_content, "chapter_summary")
+            chapter_data = [[chapter, content] for chapter, content in chapter_summary.items()]
+                
+            # 生成人物志
+            character_summary = generate_summary(client, md_content, "character_summary")
+            character_data = [[name, feature] for name, feature in character_summary.items()]       
+            cache.save_cache(pdf_file, md_content, chapter_data, character_data)
         else:
             md_content, chapter_data, character_data = cache_result
-        
-        # 创建客户端
-        client = create_client(api_key)
-            
-            
-        # 生成章节摘要
-        chapter_summary = generate_summary(client, md_content, "chapter_summary")
-        chapter_data = [[chapter, content] for chapter, content in chapter_summary.items()]
-            
-        # 生成人物志
-        character_summary = generate_summary(client, md_content, "character_summary")
-        character_data = [[name, feature] for name, feature in character_summary.items()]
-            
-        # 保存到缓存
-        cache.save_cache(pdf_file, md_content, chapter_data, character_data)
-        
         return chapter_data, character_data
         
     except Exception as e:
-        cache.save_cache(pdf_file, md_content, ["错误", str(e)], ["错误", str(e)])
         return [["错误", str(e)]], [["错误", str(e)]]

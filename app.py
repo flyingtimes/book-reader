@@ -2,14 +2,15 @@ import os
 import gradio as gr
 from utils import process_pdf_file
 from styles import THEME_CONFIG, TABLE_CONFIG
+from config import ENABLE_CACHE
 
 # 创建输出目录
 output_dir = os.path.join(os.getcwd(), "output")
 os.makedirs(output_dir, exist_ok=True)
 
-def process_pdf(pdf_file, api_key=None):
+def process_pdf(pdf_file, api_key=None, enable_cache=ENABLE_CACHE):
     """处理PDF文件，转换为Markdown并生成摘要"""
-    return process_pdf_file(pdf_file, output_dir, api_key)
+    return process_pdf_file(pdf_file, output_dir, api_key, enable_cache)
 
 # 创建Gradio界面
 with gr.Blocks(**THEME_CONFIG) as demo:
@@ -23,6 +24,7 @@ with gr.Blocks(**THEME_CONFIG) as demo:
             placeholder="如果未设置环境变量，请在此输入您的OpenRouter API密钥",
             type="password"
         )
+        enable_cache = gr.Checkbox(label="缓存加速", value=ENABLE_CACHE)
         submit_btn = gr.Button("开始处理")
         
     with gr.Tabs() as tabs:
@@ -34,7 +36,7 @@ with gr.Blocks(**THEME_CONFIG) as demo:
     
     submit_btn.click(
         fn=process_pdf,
-        inputs=[pdf_input, api_key],
+        inputs=[pdf_input, api_key, enable_cache],
         outputs=[summary_output, summary_charaters]
     )
     
