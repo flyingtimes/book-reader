@@ -36,3 +36,4 @@ ENV/
 
 # Project specific
 output/
+pdf_cache.db
