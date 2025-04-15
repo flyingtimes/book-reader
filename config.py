@@ -10,15 +10,15 @@ API_BASE_URL = "https://openrouter.ai/api/v1"
 
 # 模型配置
 MODEL_NAMES = [
-    "meta-llama/llama-4-scout:free",
-    "meta-llama/llama-4-scout:free",
-    "meta-llama/llama-4-scout:free", 
-    "meta-llama/llama-4-scout:free"
+    "google/gemini-2.0-flash-lite-001",
+    "google/gemini-2.0-flash-exp:free",
+    "google/gemini-2.0-flash-exp:free", 
+    "google/gemini-2.0-flash-exp:free"
 ]
 
 # 摘要生成配置
-MAX_LENGTH = 500000
-MAX_TOKENS = 50000
+MAX_LENGTH = 1000000
+MAX_TOKENS = -1
 MAX_RETRY = 1
 
 # 缓存配置

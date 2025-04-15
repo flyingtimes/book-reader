@@ -17,6 +17,7 @@ class PDFCache:
                     content TEXT NOT NULL,
                     chapter_data TEXT NOT NULL,
                     character_data TEXT NOT NULL,
+                    translation TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -49,7 +50,7 @@ class PDFCache:
             print(f"查询数据库，MD5：{md5_hash}")
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute(
-                    "SELECT content, chapter_data, character_data FROM pdf_cache WHERE md5_hash = ?",
+                    "SELECT content, chapter_data, character_data, translation FROM pdf_cache WHERE md5_hash = ?",
                     (md5_hash,)
                 )
                 result = cursor.fetchone()
@@ -59,7 +60,8 @@ class PDFCache:
                     content = result[0]
                     chapter_data = json.loads(result[1])
                     character_data = json.loads(result[2])
-                    return content, chapter_data, character_data
+                    translation = result[3]
+                    return content, chapter_data, character_data, translation
                 else:
                     print(f"未找到缓存记录：{md5_hash}")
                 return None
@@ -67,7 +69,7 @@ class PDFCache:
             print(f"获取缓存失败：{str(e)}")
             return None
     
-    def save_cache(self, file_path: str, content: str, chapter_data: List[List[str]], character_data: List[List[str]]) -> bool:
+    def save_cache(self, file_path: str, content: str, chapter_data: List[List[str]], character_data: List[List[str]], translation: str = None) -> bool:
         """保存处理结果到缓存"""
         try:
             print(f"开始保存缓存，文件路径：{file_path}")
@@ -76,8 +78,8 @@ class PDFCache:
             with sqlite3.connect(self.db_path) as conn:
                 import json
                 conn.execute(
-                    "INSERT OR REPLACE INTO pdf_cache (md5_hash, content, chapter_data, character_data) VALUES (?, ?, ?, ?)",
-                    (md5_hash, content, json.dumps(chapter_data), json.dumps(character_data))
+                    "INSERT OR REPLACE INTO pdf_cache (md5_hash, content, chapter_data, character_data, translation) VALUES (?, ?, ?, ?, ?)",
+                    (md5_hash, content, json.dumps(chapter_data), json.dumps(character_data), translation)
                 )
                 conn.commit()
             print(f"缓存保存成功：{md5_hash}")
