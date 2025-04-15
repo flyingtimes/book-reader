@@ -8,9 +8,9 @@ from config import ENABLE_CACHE
 output_dir = os.path.join(os.getcwd(), "output")
 os.makedirs(output_dir, exist_ok=True)
 
-async def process_pdf(pdf_file, api_key=None, enable_cache=ENABLE_CACHE):
+def process_pdf(pdf_file, api_key=None, enable_cache=ENABLE_CACHE, progress=gr.Progress()):
     """处理PDF文件，转换为Markdown并生成摘要"""
-    chapter_data, character_data, md_content, translation = await process_pdf_file(pdf_file, output_dir, api_key, enable_cache)
+    chapter_data, character_data, md_content, translation = process_pdf_file(pdf_file, output_dir, api_key, enable_cache)
     return chapter_data, character_data, md_content, translation
 
 # 创建Gradio界面
@@ -27,8 +27,7 @@ with gr.Blocks(**THEME_CONFIG) as demo:
         )
         enable_cache = gr.Checkbox(label="缓存加速", value=ENABLE_CACHE)
         submit_btn = gr.Button("开始处理")
-    with gr.Row():
-        main_progress = gr.Progress()
+
     with gr.Tabs() as tabs:
         with gr.TabItem("内容摘要"):
             summary_output = gr.Dataframe(**TABLE_CONFIG["summary_table"])
@@ -45,7 +44,8 @@ with gr.Blocks(**THEME_CONFIG) as demo:
     submit_btn.click(
         fn=process_pdf,
         inputs=[pdf_input, api_key, enable_cache],
-        outputs=[summary_output, summary_charaters, markdown_output, translation_output]
+        outputs=[summary_output, summary_charaters, markdown_output, translation_output],
+        show_progress=True
     )
     
     gr.Markdown("""

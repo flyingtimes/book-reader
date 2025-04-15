@@ -110,7 +110,7 @@ def decode_json(json_str: str) -> Optional[Dict]:
         try:
             return json.loads(''.join(result))
         except json.JSONDecodeError:
-            print(f"JSON解码失败：\n{json_str}")
+            print(f"JSON解码失败：\n{result}")
             return None
             
     try:
@@ -180,15 +180,15 @@ def process_pdf_file(pdf_file: str, output_dir: str, api_key: Optional[str] = No
             client = create_client(api_key)
             
             update_progress(progress, 0.3, "正在生成章节摘要")
-            chapter_summary = await generate_summary(client, md_content, "chapter_summary")
+            chapter_summary =  generate_summary(client, md_content, "chapter_summary")
             chapter_data = [[chapter, content] for chapter, content in chapter_summary.items()]
             
             update_progress(progress, 0.5, "正在生成人物志")
-            character_summary = await generate_summary(client, md_content, "character_summary")
+            character_summary =  generate_summary(client, md_content, "character_summary")
             character_data = [[name, feature] for name, feature in character_summary.items()]
             
             update_progress(progress, 0.6, "正在翻译内容")
-            translation = await translate_content(client, md_content, progress)
+            translation =  translate_content(client, md_content, progress)
             
             update_progress(progress, 0.9, "正在保存缓存")
             cache.save_cache(pdf_file, md_content, chapter_data, character_data, translation)
